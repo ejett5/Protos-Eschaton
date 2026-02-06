@@ -97,20 +97,7 @@
       if (infoCountEl) infoCountEl.textContent = data.infos ?? 0;
     }
 
-    // ============================================================================
-    // MAIN FUNCTIONS - These interact with your Google Apps Script
-    // ============================================================================
-
-    /**
-     * Load the current counts from Google Sheets
-     * This runs when the page first loads to show existing counts
-     * 
-     * HOW IT WORKS:
-     * 1. Builds a URL with ?action=get&slug=home
-     * 2. Sends a simple GET request (no CORS issues!)
-     * 3. Receives JSON response with current counts
-     * 4. Updates the display
-     */
+    
     async function loadCounts() {
       try {
         // First, check if the URL has been configured
