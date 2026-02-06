@@ -1,81 +1,248 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles.css">
-    <title>Protos-Eschaton</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Protos-Eschaton</title>
+  <link rel="stylesheet" href="styles.css">
+  
+      
 </head>
 <body>
-    <Div> <!--container for the Body-->
-        <h1>Protos-Eschatan</h1>
+  <div class="container">
+    <h1>Protos-Eschaton</h1>
 
-        <Div> <!-- container for the content -->
-            <p>
-                Throughout the history of our world maturing nations have given birth to new nations. 
-                This process has always been fraught with pain, misery and death. 
-                </p>
+    <p>Throughout the history of our world, maturing nations have given birth to new nations. This process has always been fraught with pain, misery and death.</p>
 
-                <p>
-                    Let us this day recognize that through our freedom of thought,  speech and religion there has developed a party with a new  philosophy and theory of governance that is no longer compatible with our constitution and our beliefs.
-                    We as a nation recognize and understand that we are at an impasse. This new philosophy and form of governance yearns to be free.
-                    We as a nation would like to offer this olive branch of peace. We're offering to help you find a place in this world where you may start a new.
-                </p>
+    <p>Let us this day recognize that through our freedom of thought, speech and religion there has developed a party with a new philosophy and theory of governance that is no longer compatible with our constitution and our beliefs. We as a nation recognize and understand that we are at an impasse. This new philosophy and form of governance yearns to be free. We as a nation would like to offer this olive branch of peace. We're offering to help you find a place in this world where you may start anew.</p>
 
-                 <div class="keyPoints"> <!-- centered content for key points-->
-                     <p>A place where you may write your own constitution.</p>
-                     <p>A place where you write your own laws.</p>
-                     <p>A place where you decide morals.</p>
-                     <p>A place where you decide.</p>
-                 </div>
+    <div class="keyPoints">
+      <p>A place where you may write your own constitution.</p>
+      <p>A place where you write your own laws.</p>
+      <p>A place where you decide morals.</p>
+      <p>A place where you decide.</p>
+    </div>
 
-       We the people would appoint a liason to help you with this process to peacefully transition to a new nation.
+    <p>We the people would appoint a liaison to help you with this process to peacefully transition to a new nation. Perhaps this is the next step in the evolution of mankind. Only time will tell.</p>
 
-      Perhaps this is the next step in the evolution of mankind. Only time will tell. 
-
-            </p>
-
-            <Div> <!-- container for interactive like boxes below content -->
-
-                <div class="buttons">
-    <button id="likeBtn">👍 Like <span id="likeCount">0</span></button>
-    <button id="dislikeBtn">👎 Dislike <span id="dislikeCount">0</span></button>
-    <button id="infoBtn">ℹ️ More Info <span id="infoCount">0</span></button>
+    <div class="buttons">
+      <button id="likeBtn">👍 Like <span id="likeCount">0</span></button>
+      <button id="dislikeBtn">👎 Dislike <span id="dislikeCount">0</span></button>
+      <button id="infoBtn">ℹ️ More Info <span id="infoCount">0</span></button>
+    </div>
+    
+    <div id="err" class="error">There was a problem talking to the counter service.</div>
+    <div id="success" class="success">Count updated!</div>
   </div>
 
   <script>
-    const ENDPOINT = "https://script.google.com/macros/s/AKfycbw12345ABCDEF/exec; // .../exec
-    const slug = "home"; // change per page/item if you want multiple counters
+    // ============================================================================
+    // CONFIGURATION - REPLACE THIS WITH YOUR ACTUAL DEPLOYMENT URL
+    // ============================================================================
+    // Get your URL from: Google Apps Script > Deploy > Manage deployments
+    // It should end with /exec (NOT /dev)
+    // Example: https://script.google.com/macros/s/AKfycbwXXXXXXXXXXXXXXX/exec
+    
+    const ENDPOINT = "https://script.google.com/macros/s/YOUR_SCRIPT_ID_HERE/exec";
+    const slug = "home"; // Identifier for this page's counters
 
+    // ============================================================================
+    // HELPER FUNCTIONS
+    // ============================================================================
+
+    /**
+     * Shows an error message to the user
+     * This replaces the log() function that was causing the null error
+     */
+    function showError(message) {
+      const errorDiv = document.getElementById("err");
+      if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = "block";
+      }
+      console.error(message);
+    }
+
+    /**
+     * Shows a success message to the user
+     */
+    function showSuccess(message) {
+      const successDiv = document.getElementById("success");
+      if (successDiv) {
+        successDiv.textContent = message;
+        successDiv.style.display = "block";
+        
+        // Hide the success message after 2 seconds
+        setTimeout(() => {
+          successDiv.style.display = "none";
+        }, 2000);
+      }
+    }
+
+    /**
+     * Hides all status messages
+     */
+    function hideMessages() {
+      const errorDiv = document.getElementById("err");
+      const successDiv = document.getElementById("success");
+      if (errorDiv) errorDiv.style.display = "none";
+      if (successDiv) successDiv.style.display = "none";
+    }
+
+    /**
+     * Updates all counter displays with new values
+     */
+    function updateDisplay(data) {
+      const likeCountEl = document.getElementById("likeCount");
+      const dislikeCountEl = document.getElementById("dislikeCount");
+      const infoCountEl = document.getElementById("infoCount");
+      
+      if (likeCountEl) likeCountEl.textContent = data.likes ?? 0;
+      if (dislikeCountEl) dislikeCountEl.textContent = data.dislikes ?? 0;
+      if (infoCountEl) infoCountEl.textContent = data.infos ?? 0;
+    }
+
+    // ============================================================================
+    // MAIN FUNCTIONS - These interact with your Google Apps Script
+    // ============================================================================
+
+    /**
+     * Load the current counts from Google Sheets
+     * This runs when the page first loads to show existing counts
+     * 
+     * HOW IT WORKS:
+     * 1. Builds a URL with ?action=get&slug=home
+     * 2. Sends a simple GET request (no CORS issues!)
+     * 3. Receives JSON response with current counts
+     * 4. Updates the display
+     */
     async function loadCounts() {
-      const res = await fetch(`${ENDPOINT}?slug=${encodeURIComponent(slug)}`);
-      const data = await res.json();
-      document.getElementById("likeCount").textContent = data.likes ?? 0;
-      document.getElementById("dislikeCount").textContent = data.dislikes ?? 0;
-      document.getElementById("infoCount").textContent = data.infos ?? 0;
+      try {
+        // First, check if the URL has been configured
+        if (ENDPOINT.includes("YOUR_SCRIPT_ID_HERE")) {
+          showError("Configuration needed: Please replace YOUR_SCRIPT_ID_HERE in the code with your actual Apps Script deployment URL.");
+          return;
+        }
+
+        console.log("Loading counts for slug:", slug);
+        
+        // Build the request URL with parameters
+        const url = `${ENDPOINT}?action=get&slug=${encodeURIComponent(slug)}`;
+        
+        // Make the GET request
+        // Using GET instead of POST avoids CORS preflight issues
+        const response = await fetch(url, { 
+          method: 'GET',
+          cache: "no-store",  // Always get fresh data
+          redirect: 'follow'   // Follow any redirects
+        });
+        
+        // Check if the request was successful
+        if (!response.ok) {
+          throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+        }
+        
+        // Parse the JSON response
+        const data = await response.json();
+        console.log("Loaded counts:", data);
+        
+        // Update the page display
+        updateDisplay(data);
+        hideMessages();
+        
+      } catch (error) {
+        console.error("Error loading counts:", error);
+        showError("Could not load counts: " + error.message);
+      }
     }
 
+    /**
+     * Increment (bump) a counter
+     * This runs when someone clicks a Like, Dislike, or Info button
+     * 
+     * HOW IT WORKS:
+     * 1. Builds a URL with ?action=bump&slug=home&field=likes
+     * 2. Sends a simple GET request (avoiding CORS!)
+     * 3. Receives updated counts
+     * 4. Updates the display
+     * 
+     * @param {string} field - Which counter to increment: 'likes', 'dislikes', or 'infos'
+     */
     async function bump(field) {
-      const res = await fetch(ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, field })
-      });
-      const data = await res.json();
-      document.getElementById("likeCount").textContent = data.likes ?? 0;
-      document.getElementById("dislikeCount").textContent = data.dislikes ?? 0;
-      document.getElementById("infoCount").textContent = data.infos ?? 0;
+      try {
+        // Check if the URL has been configured
+        if (ENDPOINT.includes("YOUR_SCRIPT_ID_HERE")) {
+          showError("Configuration needed: Please replace YOUR_SCRIPT_ID_HERE in the code with your actual Apps Script deployment URL.");
+          return;
+        }
+
+        console.log(`Bumping ${field} for slug:`, slug);
+        
+        // Find the button that was clicked and disable it during the request
+        const btnId = field === 'likes' ? 'likeBtn' : field === 'dislikes' ? 'dislikeBtn' : 'infoBtn';
+        const button = document.getElementById(btnId);
+        if (button) button.disabled = true;
+
+        // Build the request URL with all parameters
+        const url = `${ENDPOINT}?action=bump&slug=${encodeURIComponent(slug)}&field=${encodeURIComponent(field)}`;
+        
+        // Make the GET request
+        // This is the key to avoiding CORS issues - we use GET with URL parameters
+        // instead of POST with a request body
+        const response = await fetch(url, {
+          method: 'GET',
+          cache: 'no-store',
+          redirect: 'follow'
+        });
+
+        // Check if the request was successful
+        if (!response.ok) {
+          throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+        }
+        
+        // Parse the JSON response which contains all updated counts
+        const data = await response.json();
+        console.log("Updated counts:", data);
+        
+        // Update the display with the new counts
+        updateDisplay(data);
+        
+        // Show success message
+        showSuccess("Count updated!");
+        
+        // Re-enable the button
+        if (button) button.disabled = false;
+        
+      } catch (error) {
+        console.error("Error bumping counter:", error);
+        showError("Could not update count: " + error.message);
+        
+        // Re-enable the button even if there was an error
+        const btnId = field === 'likes' ? 'likeBtn' : field === 'dislikes' ? 'dislikeBtn' : 'infoBtn';
+        const button = document.getElementById(btnId);
+        if (button) button.disabled = false;
+      }
     }
 
-    document.getElementById("likeBtn").addEventListener("click", () => bump('likes'));
-    document.getElementById("dislikeBtn").addEventListener("click", () => bump('dislikes'));
-    document.getElementById("infoBtn").addEventListener("click", () => bump('infos'));
+    // ============================================================================
+    // EVENT LISTENERS - Connect buttons to functions
+    // ============================================================================
 
-    loadCounts();
+    // Attach click handlers to each button
+    // When someone clicks "Like", it calls bump('likes')
+    document.getElementById("likeBtn").addEventListener("click", () => bump("likes"));
+    document.getElementById("dislikeBtn").addEventListener("click", () => bump("dislikes"));
+    document.getElementById("infoBtn").addEventListener("click", () => bump("infos"));
+
+    // ============================================================================
+    // INITIALIZATION - Load counts when page first loads
+    // ============================================================================
+
+    // When the page finishes loading, automatically fetch the current counts
+    window.addEventListener('load', () => {
+      console.log("Page loaded, initializing counter system...");
+      loadCounts();
+    });
   </script>
-
-            </Div>
-        </Div>
-    </Div>
 </body>
 </html>
